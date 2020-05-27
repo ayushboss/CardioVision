@@ -33,6 +33,7 @@ public class Mechanics3 {
 		PrintWriter pw5 = new PrintWriter(new FileWriter("Qa.out"));
 		PrintWriter pw6 = new PrintWriter(new FileWriter("LVV.out")); 
 		
+		//entering user-input values
 		Scanner keyboard = new Scanner(System.in);
 		System.out.println("Enter the heart rate (in bpm). Enter -1 if using default");
 		HR = keyboard.nextInt();
@@ -75,15 +76,15 @@ public class Mechanics3 {
 		
 		double Tmax = 0.2 + 0.15*tc;		
 		
-		double dt = 0.0001;
+		double dt = 0.0001; //discrete time step
 		
 		//initial values
-		double[] LVP = new double[10002];
-		double[] LAP = new double[10002];
-		double[] AP = new double[10002];
-		double[] AOP = new double[10002];
-		double[] Qa = new double[10002];
-		double[] Cv = new double[10002];
+		double[] LVP = new double[10002]; //left ventricular pressure
+		double[] LAP = new double[10002]; //left atrial pressure
+		double[] AP = new double[10002]; //arterial pressure
+		double[] AOP = new double[10002]; //aortic pressure
+		double[] Qa = new double[10002]; //flow rate
+		double[] Cv = new double[10002]; //compliance
 		
 		System.out.println("Enter the initial Left Ventricular Pressure (in mmHg). Enter -1 if using default");
 		LVP[0] = keyboard.nextDouble();
@@ -103,33 +104,34 @@ public class Mechanics3 {
 		System.out.println("Enter initial Aortic Pressure (in mmHg). Enter -1 if using default");
 		AOP[0] = keyboard.nextDouble();
 		if(AOP[0]==-1)
-			AOP[0] = 80;
+			AOP[0] = 80; //default value
 		
 		System.out.println("Enter initial Flow Rate (in mL/s). Enter -1 if using default");
 		Qa[0] = keyboard.nextDouble();
 		if(Qa[0]==-1)
-			Qa[0] = 8.2;
+			Qa[0] = 8.2; //default value
 		
 		System.out.println("Enter initial Ventricular Compliance (in mL/mmHg). Enter -1 if using default");
 		Cv[0] = keyboard.nextDouble();
 		if(Cv[0]==-1)
-			Cv[0] = 8.2;
+			Cv[0] = 8.2; //default value
 		
 		double t = 0;
 		double[][] dx = new double[5][1];
 		
 		int i = -1;
-		double tn = 0.0;
-		double En = 0.0;
-		double Dm = 0.0;
-		double Da = 0.0;
-		double dCv = 0;
-		double[] Tn = new double[10002];
+		double tn = 0.0; //proportion of total time that has passed (t/Tmax)
+		double En = 0.0; //normalized elastance
+		double Dm = 0.0; //mitral diode on or off
+		double Da = 0.0; //aortic dioide on or off
+		double dCv = 0; //differentiated compliance
+		double[] Tn = new double[10002]; //array of tn
 		Tn[0] = t;
-		double[] E = new double[10002];
-		double[] LVV = new double[10002];
-		double[] Time = new double[10002];
+		double[] E = new double[10002]; //array for elastance over time
+		double[] LVV = new double[10002]; //left ventricular volume over time
+		double[] Time = new double[10002]; //counting the discrete time steps; for graphing purposes
 		
+		//matrices for eventual eventual derivative calculation, values not final and will be altered in while loop
 		double[][] A = {
 				{0,0,0,0,0},
 		        {0,-1/(Rs*Cr),1/(Rs*Cr),0,0},
@@ -149,21 +151,24 @@ public class Mechanics3 {
 		while(t<=tc) {
 			i++;
 			tn = (t-Math.floor(t))/Tmax;
+			
+			//normalized elastance from double hill equation
 			En = 1.55*Math.pow(tn/0.7, 1.9)/(1+Math.pow(tn/0.7, 1.9))*(1/(1+Math.pow(tn/1.17, 21.9)));
+			
 			E[i] = (Emax-Emin)*En + Emin;
 			LVV[i] = LVP[i]/E[i] + V0;
 			Cv[i] = 1/E[i];
 			
-			if(LAP[i] > LVP[i])
+			if(LAP[i] > LVP[i]) //determine if mitral valve opens
 				Dm = 1;
 			else
 				Dm = 0;
-			if(LVP[i] > AOP[i])
+			if(LVP[i] > AOP[i]) //determine if aortic valve opens
 				Da = 1;
 			else
 				Da = 0;
-			if(i>1)
-				dCv = (Cv[i]-Cv[i-1])/dt;
+			if(i>1) 
+				dCv = (Cv[i]-Cv[i-1])/dt; //change in compliance
 			else
 				dCv = 0;
 			
